@@ -2,21 +2,18 @@ package com.test.email;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonParser;
 import tools.jackson.core.json.JsonReadFeature;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
-
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 @Component
@@ -52,17 +49,22 @@ public class EmailConsumer {
             consumer.subscribe(List.of("email-input"));
 
             while(true) {
-                for (var e : consumer.poll(Duration.ofMillis(500))) {
-                    JsonNode node = mapper.readTree(e.value());
-
-                    String to = node.get("to").asString();
-                    String name = node.get("name").asString();
-
-                    log.info("VALUE: {}, NAME: {}", to, name);
-                    this.emailSender.sendEmail(to, name, this.link);
+                for (var e : consumer.poll(Duration.ofSeconds(1))) {
+                    try {
+                        JsonNode node = mapper.readTree(e.value());
+                        Assert.notNull(node, "Null node");
+                        String to = Optional.of(node.get("to"))
+                                .orElseThrow(() -> new NullPointerException("Null property")).asString();
+                        String name = Optional.of(node.get("name"))
+                                .orElseThrow(() -> new NullPointerException("Null property")).asString();
+                        log.info("VALUE: {}, NAME: {}", to, name);
+                        this.emailSender.sendEmail(to, name, this.link);
+                    } catch (JacksonException | NullPointerException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
-        } catch (JacksonException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
