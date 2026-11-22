@@ -1,5 +1,10 @@
 # How to build
 
+## Running application:
+```
+docker compose up --build
+```
+
 ## Create topic:
 ```
 docker exec -it broker-kafka /opt/kafka/bin/kafka-topics.sh --create --topic email-input --partitions 3 --bootstrap-server kafka-broker:19092 
