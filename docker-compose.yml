@@ -26,7 +26,6 @@ services:
     container_name: broker-kafka
     ports:
       - "9092:9092"
-      - "9093:9093"
       - "19092:19092"
     environment:
       CLUSTER_ID: '4L6g3nShT-eMCtK--X86sw'
