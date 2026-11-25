@@ -46,8 +46,10 @@ public class EmailConsumer {
                 for (var e : consumer.poll(Duration.ofSeconds(1))) {
                     try {
                         EmailDTO email = e.value();
-                        log.info("EMAIL: {}, NAME: {}, LINK: {}", email.to(), email.name(), email.link());
-                        this.emailSender.sendEmail(email);
+                        if(email.to() != null && email.name() != null && email.link() != null) {
+                            log.info("EMAIL: {}, NAME: {}, LINK: {}", email.to(), email.name(), email.link());
+                            this.emailSender.sendEmail(email);
+                        }
                     } catch (JacksonException | NullPointerException ex) {
                         ex.printStackTrace();
                     }
