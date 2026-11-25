@@ -22,9 +22,6 @@ public class EmailConsumer {
     @Value("${kafka.config.host}")
     private String host;
 
-    @Value("${email.app.redirect.link}")
-    private String link;
-
     private final EmailSender emailSender;
     private final Logger log = LoggerFactory.getLogger(EmailConsumer.class);
 
@@ -49,7 +46,7 @@ public class EmailConsumer {
                 for (var e : consumer.poll(Duration.ofSeconds(1))) {
                     try {
                         EmailDTO email = e.value();
-                        log.info("VALUE: {}, NAME: {}", email.to(), email.name());
+                        log.info("EMAIL: {}, NAME: {}, LINK: {}", email.to(), email.name(), email.link());
                         this.emailSender.sendEmail(email);
                     } catch (JacksonException | NullPointerException ex) {
                         ex.printStackTrace();
