@@ -28,8 +28,6 @@ public class EmailSender {
     private String password;
     @Value("${email.port}")
     private int port;
-    @Value("${email.app.redirect.link}")
-    private String link;
 
     private final TemplateEngine templateEngine;
 
