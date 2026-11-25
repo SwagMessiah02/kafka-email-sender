@@ -1,17 +1,21 @@
 package com.test.email;
 
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.mail.outbound.MailSendingMessageHandler;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.messaging.MessageHandler;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
 @Configuration
@@ -56,20 +60,24 @@ public class EmailSender {
         return new MailSendingMessageHandler(mailSender);
     }
 
-    public void sendEmail(String to, String name, String link) throws Exception {
+    public void sendEmail(EmailDTO email) {
         Context ctx = new Context();
-        ctx.setVariable("nome", name);
-        ctx.setVariable("link", link);
+        ctx.setVariable("nome", email.name());
+        ctx.setVariable("link", email.link());
         String html = templateEngine.process("email", ctx);
 
-        String text = "Hello, " + name + "! Your registration was received. Confirm your account: " + link;
+        String text = "Hello, " + email.name() + "! Your registration was received. Confirm your account: " + email.link();
 
-        MimeMessage mime = mailSender().createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
-        helper.setFrom(username, "Email Sender App");
-        helper.setTo(to);
-        helper.setSubject("Registration Confirmation");
-        helper.setText(text, html);
-        mailSender().send(mime);
+        try {
+            MimeMessage mime = mailSender().createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
+            helper.setFrom(username, "Email Sender App");
+            helper.setTo(email.to());
+            helper.setSubject("Registration Confirmation");
+            helper.setText(text, html);
+            mailSender().send(mime);
+        } catch (MailException | MessagingException | UnsupportedEncodingException ex) {
+            ex.printStackTrace();
+        }
     }
 }
