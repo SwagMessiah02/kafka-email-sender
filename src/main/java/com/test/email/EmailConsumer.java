@@ -2,6 +2,7 @@ package com.test.email;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +25,7 @@ public class EmailConsumer {
     @Value("${email.app.redirect.link}")
     private String link;
 
-    private EmailSender emailSender;
+    private final EmailSender emailSender;
     private final Logger log = LoggerFactory.getLogger(EmailConsumer.class);
 
     public EmailConsumer(EmailSender emailSender) {
@@ -35,37 +36,26 @@ public class EmailConsumer {
         Properties props = new Properties();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, host);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "email-app");
 
-        JsonMapper mapper = JsonMapper.builder()
-                .enable(JsonReadFeature.ALLOW_SINGLE_QUOTES)
-                .enable(JsonReadFeature.ALLOW_UNQUOTED_PROPERTY_NAMES)
-                .build();
-
-        try(var consumer = new KafkaConsumer<String, String>(props)) {
+        try(var consumer = new KafkaConsumer<String, EmailDTO>(
+                props,
+                new StringDeserializer(),
+                new JsonDeserializer<>(EmailDTO.class))) {
             consumer.subscribe(List.of("email-input"));
 
             while(true) {
                 for (var e : consumer.poll(Duration.ofSeconds(1))) {
                     try {
-                        JsonNode node = mapper.readTree(e.value());
-                        Assert.notNull(node, "Null node");
-                        String to = Optional.of(node.get("to"))
-                                .orElseThrow(() -> new NullPointerException("Null property")).asString();
-                        String name = Optional.of(node.get("name"))
-                                .orElseThrow(() -> new NullPointerException("Null property")).asString();
-                        log.info("VALUE: {}, NAME: {}", to, name);
-                        this.emailSender.sendEmail(to, name, this.link);
+                        EmailDTO email = e.value();
+                        log.info("VALUE: {}, NAME: {}", email.to(), email.name());
+                        this.emailSender.sendEmail(email);
                     } catch (JacksonException | NullPointerException ex) {
                         ex.printStackTrace();
                     }
                 }
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 }
