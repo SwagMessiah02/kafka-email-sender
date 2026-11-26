@@ -15,7 +15,7 @@ docker exec -it broker-kafka /opt/kafka/bin/kafka-topics.sh --create --topic ema
 docker exec -it broker-kafka /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server kafka-broker:19092 --topic email-input --producer-property partitioner.class=org.apache.kafka.clients.producer.RoundRobinPartitioner
 ```
 
-## Message example
+## Message example:
 ```
 {"to":"teste@email.com","name":"teste","link":"www.example.com"}
 ```
