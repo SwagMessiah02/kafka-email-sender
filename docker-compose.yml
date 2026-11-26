@@ -3,8 +3,8 @@ x-email-app: &email-app
   environment:
     USERNAME:
     PASSWORD:
-    KAFKA_PORT:
-    HOST:
+    KAFKA_PORT: 19092
+    HOST: kafka-broker
     EMAIL_HOST:
     PORT:
 services:
